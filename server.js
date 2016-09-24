@@ -16,8 +16,16 @@ function getMonthNumber (monthString) {
     return monthArr.indexOf(monthString);
 }
 
+function getMonthString (monthNumber) {
+    return monthArr[monthNumber];
+}
+
 function getDaysInMonth (monthCode) {
     return daysInMonthArr[monthCode];
+}
+
+function getDaysInMonthLeap (monthCode) {
+    return daysInMonthLeapArr[monthCode];
 }
 
 function isLeapYear (year) {
@@ -26,9 +34,39 @@ function isLeapYear (year) {
 
 // ----------------------------------------------------------------------------
 // Conversion functions: UNIX to natural date, and conversely.
-// Note: natural dates are given as arrays of strings: [day, month, year];
+// Note: natural dates are given as arrays of strings: [day, month, year].
 function unixToNatural(unix) {
-    
+    unix -= unix % secs_in_day;
+    var days = unix / secs_in_day;
+    var fourYearBlocks = Math.floor(days / (365*3 + 366));
+    var daysToCount = days - fourYearBlocks*(365*3 + 366);
+    var year;
+    if (daysToCount >= 365*2 + 366) {
+        year = 1970 + 4*fourYearBlocks + 3;
+        daysToCount -= 365*2 + 366;
+    } else if (daysToCount >= 365*2) {
+        year = 1970 + 4*fourYearBlocks + 2;
+        daysToCount -= 365*2;
+    } else if (daysToCount >= 365) {
+        year = 1970 + 4*fourYearBlocks + 1;
+        daysToCount -= 365;
+    } else {
+        year = 1970 + 4*fourYearBlocks;
+    }
+    var month = 0;
+    if (isLeapYear(year)) {
+        while (daysToCount >= getDaysInMonthLeap(month)) {
+            daysToCount -= getDaysInMonthLeap(month);
+            month++;
+        }
+    } else {
+        while (daysToCount >= getDaysInMonth(month)) {
+            daysToCount -= getDaysInMonth(month);
+            month++;
+        }
+    }
+    var day = daysToCount + 1;
+    return [day.toString(), getMonthString(month), year.toString()];
 }
 
 function naturalToUnix(natural) {
@@ -41,12 +79,12 @@ function naturalToUnix(natural) {
     var i = 0;
     if (isLeapYear(year)) {
         while (i < month) {
-            unix += daysInMonthLeapArr[i]*secs_in_day;
+            unix += getDaysInMonthLeap(i)*secs_in_day;
             i++;
         }
     } else {
         while (i < month) {
-            unix += daysInMonthArr[i]*secs_in_day;
+            unix += daysInMonthArr(i)*secs_in_day;
             i++;
         }
     }
