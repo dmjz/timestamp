@@ -101,6 +101,7 @@ function parseDate(str) {
     var dayIndex = str.search( /[0-9][0-9]/ );
     if (dayIndex < 0) {return;}
     var day = str.slice(dayIndex, dayIndex + 2);
+    str = str.replace( /[0-9][0-9]/ , '');
     var yearIndex = str.search( /[0-9][0-9][0-9][0-9]/ );
     if (yearIndex < 0) {return;}
     var year = str.slice(yearIndex, yearIndex + 4);
@@ -138,7 +139,6 @@ app.get('*', function (request, response) {
   // Extract url and attempt to parse it.
   // If succsessful, parsed = [unix, day, month, year].
   // 'unix' is a number, the rest are strings.
-  console.log(request.url);
   var parsed = parseDate(request.url);
   if (parsed) {
       response.writeHead(200, { 'Content-Type' : 'application/json' });
@@ -149,7 +149,7 @@ app.get('*', function (request, response) {
           }
       ));
   } else {
-      parsed = parseUnix(request.url.slice(1));
+      parsed = parseUnix(request.url.slice(1)); //remove leading '/' from url
       if (parsed) {
           response.writeHead(200, { 'Content-Type' : 'application/json' });
           response.end(JSON.stringify(
