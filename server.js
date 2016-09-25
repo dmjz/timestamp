@@ -84,7 +84,7 @@ function naturalToUnix(natural) {
         }
     } else {
         while (i < month) {
-            unix += daysInMonthArr(i)*secs_in_day;
+            unix += getDaysInMonth(i)*secs_in_day;
             i++;
         }
     }
@@ -97,7 +97,34 @@ function naturalToUnix(natural) {
 // 'unix' is a number, the rest are strings.
 // If can't parse, return with no value.
 function parseDate(str) {
-    return [0, '1', 'January', '1970'];
+    str = decodeURI(str);
+    var dayIndex = str.search( /[0-9][0-9]/ );
+    if (dayIndex < 0) {return;}
+    var day = str.slice(dayIndex, dayIndex + 2);
+    var yearIndex = str.search( /[0-9][0-9][0-9][0-9]/ );
+    if (yearIndex < 0) {return;}
+    var year = str.slice(yearIndex, yearIndex + 4);
+    var month;
+    if (str.search( /jan/i ) >= 0) {month = 'January';} 
+    else if (str.search( /feb/i ) >= 0) {month = 'February';} 
+    else if (str.search( /mar/i ) >= 0) {month = 'March';} 
+    else if (str.search( /apr/i ) >= 0) {month = 'April';} 
+    else if (str.search( /may/i ) >= 0) {month = 'May';} 
+    else if (str.search( /jun/i ) >= 0) {month = 'June';} 
+    else if (str.search( /jul/i ) >= 0) {month = 'July';} 
+    else if (str.search( /aug/i ) >= 0) {month = 'August';} 
+    else if (str.search( /sep/i ) >= 0) {month = 'September';}
+    else if (str.search( /oct/i ) >= 0) {month = 'October';}
+    else if (str.search( /nov/i ) >= 0) {month = 'November';}
+    else if (str.search( /dec/i ) >= 0) {month = 'December';} 
+    else {return;}
+    return [naturalToUnix([day, month, year]), day, month, year];
+}
+// Parse string as a unix timestamp.
+function parseUnix(str) {
+    var unix = parseInt(str);
+    if (isNaN(unix)) {return;}
+    return [unix].concat(unixToNatural(unix));
 }
 
 // ----------------------------------------------------------------------------
@@ -109,17 +136,11 @@ app.get('/', function (request, response) {
 
 app.get('*', function (request, response) {
   // Extract url and attempt to parse it.
+  // If succsessful, parsed = [unix, day, month, year].
+  // 'unix' is a number, the rest are strings.
+  console.log(request.url);
   var parsed = parseDate(request.url);
-  
-  // If couldn't parse url, parsed will be undefined.
-  if (!parsed) {
-      response.writeHead(200, { 'Content-Type' : 'application/json' });
-      response.end(JSON.stringify(
-          { "unix": null, "natural": null }
-      ));
-  } else {
-      // Otherwise parsed = [unix, day, month, year].
-      // 'unix' is a number, the rest are strings.
+  if (parsed) {
       response.writeHead(200, { 'Content-Type' : 'application/json' });
       response.end(JSON.stringify(
           { 
@@ -127,6 +148,22 @@ app.get('*', function (request, response) {
             "natural": parsed[2] + " " + parsed[1] + ", " + parsed[3]
           }
       ));
+  } else {
+      parsed = parseUnix(request.url.slice(1));
+      if (parsed) {
+          response.writeHead(200, { 'Content-Type' : 'application/json' });
+          response.end(JSON.stringify(
+              { 
+                "unix": parsed[0], 
+                "natural": parsed[2] + " " + parsed[1] + ", " + parsed[3]
+              }
+          ));
+      } else {
+          response.writeHead(200, { 'Content-Type' : 'application/json' });
+          response.end(JSON.stringify(
+              { "unix": null, "natural": null }
+          ));
+      }
   }
 });
 
