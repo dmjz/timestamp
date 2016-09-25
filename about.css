@@ -1,0 +1,24 @@
+body {
+  background-color: #ffffcc;
+  font-family: sans-serif;
+  margin: 40px;
+  color: #660000;
+}
+h1 {
+  font-size: 3.5rem;
+  margin-left: 20px;
+}
+p {
+  display: inline-block;
+  font-size: 1.8rem;
+  margin-left: 20px;
+}
+.example {
+  font-size: 1.4rem;
+}
+.code {
+  background-color: #ffff99;
+  font-family: monospace;
+  font-size: 1.4rem;
+  color: #0000ff;
+}

@@ -1,12 +1,46 @@
 <html>
 <head>
     <title>Timestamp service</title>
+    <!-- Note: had difficulty figuring out what href to use to link a local
+        css file here, so I'm using internal styling instead. -->
+    <style>
+        body {
+          background-color: #ffffcc;
+          font-family: sans-serif;
+          margin: 40px;
+          color: #660000;
+        }
+        h1 {
+          font-size: 3.5rem;
+          margin-left: 20px;
+        }
+        p {
+          display: inline-block;
+          font-size: 1.8rem;
+          margin-left: 20px;
+        }
+        .example {
+          font-size: 1.4rem;
+        }
+        .code {
+          background-color: #ffff99;
+          font-family: monospace;
+          font-size: 1.4rem;
+          color: #0000ff;
+        }
+    </style>
 </head>
 <body>
     <h1>Timestamp service</h1>
     <p>Enter a UNIX timestamp or natural date, and receive both the UNIX and natural form of that date.</p>
-    <p>Example input: https://timestamp-ms.herokuapp.com/December%2015,%202015</p>
-    <p>Example output: { "unix": 1450137600, "natural": "December 15, 2015" }</p>
+    <div>
+      <p class="example">Example input:</p> 
+      <p class="code">.../April%209,%201996</p>
+      <p class="code">.../829008000</p>
+    </div>
+    <div>
+      <p class="example">Example output:</p>
+      <p class="code">{ "unix": 829008000, "natural": "April 9, 1996" }</p>
+    </div>
 </body>
 </html>
-

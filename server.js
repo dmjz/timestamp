@@ -32,6 +32,16 @@ function isLeapYear (year) {
     return year % 4 === 0;
 }
 
+function isValidDate (dateArr) {
+    var day = parseInt(dateArr[0]);
+    var month = getMonthNumber(dateArr[1]);
+    if (isLeapYear(parseInt(dateArr[2]))) {
+        return (0 < day && day <= getDaysInMonthLeap(month));
+    } else {
+        return (0 < day && day <= getDaysInMonth(month));
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Conversion functions: UNIX to natural date, and conversely.
 // Note: natural dates are given as arrays of strings: [day, month, year].
@@ -98,14 +108,77 @@ function naturalToUnix(natural) {
 // If can't parse, return with no value.
 function parseDate(str) {
     str = decodeURI(str);
-    var dayIndex = str.search( /[0-9][0-9]/ );
-    if (dayIndex < 0) {return;}
-    var day = str.slice(dayIndex, dayIndex + 2);
-    str = str.replace( /[0-9][0-9]/ , '');
-    var yearIndex = str.search( /[0-9][0-9][0-9][0-9]/ );
-    if (yearIndex < 0) {return;}
-    var year = str.slice(yearIndex, yearIndex + 4);
-    var month;
+    var day, month, year;
+    // In case user let numbers run together, e.g. "March62013", search for a 
+    // string of 5 or 6 numbers.
+    var fiveOrSixFound = false;
+    var sixIndex = str.search( /[0-9][0-9][0-9][0-9][0-9][0-9]/ );
+    if (sixIndex >= 0) {
+        // If there is an alph char after the number string, then assume the
+        // last two digits of number string store the day.
+        // e.g. "199816june"
+        // Otherwise, assume the first two digits store the day.
+        fiveOrSixFound = true;
+        if (str.length > sixIndex + 6) {
+            var postString = str.slice(sixIndex + 6);
+            if (postString.search( /[a-z]/i ) >= 0) {
+                day = str.substring(sixIndex + 4, sixIndex + 6);
+                str = str.substring(0, sixIndex + 4) + postString;
+            } else {
+                day = str.substring(sixIndex, sixIndex + 2);
+                str = str.substring(0, sixIndex) + str.slice(sixIndex + 2);
+            }
+        } else { // str ends after the number string, so assume first 2 digits
+                 // store the day.
+            day = str.substring(sixIndex, sixIndex + 2);
+            str = str.substring(0, sixIndex) + str.slice(sixIndex + 2);
+        }
+    } else { // Check for a 5 digit string, process similar to 6 digit case.
+        var fiveIndex = str.search( /[0-9][0-9][0-9][0-9][0-9]/ );
+        if (fiveIndex >= 0) {
+            fiveOrSixFound = true;
+            if (str.length > fiveIndex + 5) {
+                var postString = str.slice(fiveIndex + 5);
+                if (postString.search( /[a-z]/i ) >= 0) {
+                    day = str.charAt(fiveIndex + 4);
+                    str = str.substring(0, fiveIndex + 4) + postString;
+                } else {
+                    day = str.charAt(fiveIndex);
+                    str = str.substring(0, fiveIndex) 
+                            + str.slice(fiveIndex + 1);
+                }
+            } else {
+                day = str.charAt(fiveIndex);
+                str = str.substring(0, fiveIndex) + str.slice(fiveIndex + 1);
+            }
+        } else {
+            // There are no strings of 6 or 5 numbers, so we can assume the
+            // string of 4 numbers is the year.
+            var yearIndex = str.search( /[0-9][0-9][0-9][0-9]/ );
+            if (yearIndex < 0) {return;} // Note: implies dates before year 
+                                         // 1000 will return null.
+            year = str.slice(yearIndex, yearIndex + 4);
+            str = str.substring(0, yearIndex) + str.slice(yearIndex + 4);
+            // Year is removed, so any remaining digits must store the day.
+            var dayIndex = str.search( /[0-9][0-9]/ );
+            if (dayIndex >= 0) {
+                day = str.substring(dayIndex, dayIndex + 2);
+            } else {
+                dayIndex = str.search( /[0-9]/ );
+                if (dayIndex < 0) {return;}
+                day = str.charAt(dayIndex);
+            }
+        }
+    }
+    // If this line is reached, then the day has been found and the string 
+    // storing the day number has been removed.
+    // If a five/six string was found, then we still need to find the year.
+    if (fiveOrSixFound) {
+        var yearIndex = str.search( /[0-9][0-9][0-9][0-9]/ );
+        if (yearIndex < 0) {return;}
+        year = str.slice(yearIndex, yearIndex + 4);
+    }
+    // Determine month.
     if (str.search( /jan/i ) >= 0) {month = 'January';} 
     else if (str.search( /feb/i ) >= 0) {month = 'February';} 
     else if (str.search( /mar/i ) >= 0) {month = 'March';} 
@@ -119,6 +192,9 @@ function parseDate(str) {
     else if (str.search( /nov/i ) >= 0) {month = 'November';}
     else if (str.search( /dec/i ) >= 0) {month = 'December';} 
     else {return;}
+    // Ensure parsed date is valid; e.g. 30 February 2011 is invalid because
+    // February has at most 29 days.
+    if (!isValidDate([day, month, year])) {return;}
     return [naturalToUnix([day, month, year]), day, month, year];
 }
 // Parse string as a unix timestamp.
@@ -168,3 +244,4 @@ app.get('*', function (request, response) {
 });
 
 app.listen(process.env.PORT, process.env.IP);
+console.log("Listening on port " + process.env.PORT);
